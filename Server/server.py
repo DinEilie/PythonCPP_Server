@@ -3,7 +3,7 @@ import socket
 
 
 def server_initialize(file_name, default_port):
-    log_message('INFO', 'Main.py', 'Initializing server')
+    log_message('INFO', 'Server', 'Initializing server')
     try:
         log_message('INFO', 'FileHandler', 'Searching for \'port.info\' file')
         with open(file_name, 'r') as file:
@@ -15,7 +15,7 @@ def server_initialize(file_name, default_port):
     except Exception as error:
         port = default_port
         log_message('ERROR', 'FileHandler', f'An error occurred while reading port from file:\n{error}')
-        log_message('INFO', 'Main.py', f'The server will listen on port: {port}')
+        log_message('INFO', 'Server', f'The server will listen on port: {port}')
         return port
 
 
@@ -31,8 +31,9 @@ def server_run(host, port):
         while conn:
             print("con!")
             while True:
-                print("recieved con!")
+                print("response con!")
                 data = conn.recv(1024)
                 text = data.decode('utf-8')
+                print(text)
                 replydata = bytearray('Shalom from server!', 'utf-8')
                 conn.send(replydata)
