@@ -1,5 +1,7 @@
 from logger import log_message
 import socket
+import struct
+import uuid
 
 
 def server_initialize(file_name, default_port):
@@ -18,6 +20,16 @@ def server_initialize(file_name, default_port):
         log_message('INFO', 'Server', f'The server will listen on port: {port}')
         return port
 
+def read_exact(sock, size):
+    """Read an exact amount of bytes from a socket."""
+    data = b''
+    while len(data) < size:
+        packet = sock.recv(size - len(data))
+        if not packet:
+            return None  # Connection closed or error
+        data += packet
+    return data
+
 
 def server_run(host, port):
     log_message('INFO', 'SocketHandler', 'Starting server')
@@ -28,12 +40,36 @@ def server_run(host, port):
         s.listen()
         conn, addr = s.accept()
         log_message('INFO', 'SocketHandler', f'Server accepted new connection from address: {addr}')
-        while conn:
-            print("con!")
+        try:
             while True:
-                print("response con!")
-                data = conn.recv(1024)
-                text = data.decode('utf-8')
-                print(text)
-                replydata = bytearray('Shalom from server!', 'utf-8')
-                conn.send(replydata)
+                # Accept the fixed-size header
+                header_size = 16 + 1 + 2 + 4  # ClientID + Version + Code + PayloadSize
+                header_data = read_exact(conn, header_size)
+
+                if not header_data:
+                    log_message('ERROR', 'SocketHandler', 'Failed to receive header from incoming request')
+                    break  # Exit the loop, which triggers the socket to close
+                
+                # Read header bytes in little-endian order
+                client_id = struct.unpack('<16s', header_data[:16])[0]
+                version = struct.unpack('<B', header_data[16:17])[0]
+                code = struct.unpack('<H', header_data[17:19])[0]
+                payload_size = struct.unpack('<I', header_data[19:23])[0]
+
+                # Read payload
+                if code == 1025 and payload_size == 255: # Valid register payload
+                    payload = read_exact(conn, payload_size)
+                    if not payload:
+                        log_message('ERROR', 'SocketHandler', 'Failed to receive payload from incoming request')
+                        break;  # Exit the loop, which triggers the socket to close
+                    
+                    name = payload[:255].decode('ascii', 'ignore').rstrip('\x00')
+                    log_message('INFO', 'SocketHandler', f'A new register request was received by {name}')
+
+                # Since we want to close the socket right after reading the header, break here
+                break
+
+        finally:
+            # Ensure the connection is closed gracefully
+            conn.close()
+            log_message('INFO', 'SocketHandler', 'Connection closed')

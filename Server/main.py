@@ -1,6 +1,8 @@
 from logger import log_message
 from server import server_initialize, server_run
 import socket
+import os
+print("Current Working Directory:", os.getcwd())
 
 
 # Configurations

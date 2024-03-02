@@ -1,19 +1,22 @@
 #pragma once
+#include <array>
+#include <vector>
+#include <string>
+#include "Logger.h"
+
+using namespace std;
 
 class Request
 {
 private:
-	char _clientID[16];
-	char _version[];
+	int _err;
+	array<unsigned char, 16> _clientID;
+	unsigned char _version;
+	uint16_t _code;
+	uint32_t _payloadSize;
+	vector<unsigned char> _payload;
 public:
-	Request();
+	Request(const array<unsigned char, 16>& clientID, unsigned char version, uint16_t code, vector<unsigned char>& payload);
+	vector<unsigned char> serializeRequest();
 	~Request();
 };
-
-Request::Request()
-{
-}
-
-Request::~Request()
-{
-}
